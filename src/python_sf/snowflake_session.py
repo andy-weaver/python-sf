@@ -1,30 +1,60 @@
-from snowflake.snowpark import Session
+import snowflake.snowpark as sp
 from python_sf.snowflake_connection import SnowflakeConnectionConfig
+from typing import Optional
 
 
 class SnowflakeSession:
-    def __init__(self):
-        self.session = None
-        self.config = SnowflakeConnectionConfig()
-        self.is_started = False
+    """A context manager wrapper around the Snowflake Snowpark Session object.
+    
+    This class uses a SnowflakeConnectionConfig to create a Snowflake Snowpark Session,
+    allowing users to utilize the session in a with-statement block.
+    
+    Examples
+    --------
+    >>> with SnowflakeSession() as session:
+    ...     result = session.sql("SELECT 1").collect()
+    """
+    def __init__(self, config: Optional[SnowflakeConnectionConfig] = None):
+        """
+        Initialize the SnowflakeSession.
+        
+        Parameters
+        ----------
+        config : SnowflakeConnectionConfig, optional
+            The configuration object containing Snowflake connection parameters.
+            If not provided, a new SnowflakeConnectionConfig is instantiated.
+        """
+        if config is None:
+            config = SnowflakeConnectionConfig()
+        self.config = config
+        self._session: Optional[sp.Session] = None
 
-    def start(self):
-        """Start a snowflake session with the given configuration."""
-        self.session = Session.builder.configs(self.config.to_dict()).create()
-        self.is_started = True
+    def __enter__(self) -> sp.Session:
+        """
+        Enter the runtime context and create a Snowflake Snowpark Session.
+        
+        Returns
+        -------
+        sp.Session
+            An instance of the Snowflake Snowpark Session.
+        """
+        connection_params = self.config.to_dict()
+        self._session = sp.Session.builder.configs(connection_params).create()
+        return self._session
 
-    def stop(self):
-        if self.is_started:
-            self.session.close()
-            self.is_started = False
-
-    def __call__(self):
-        return self.session
-
-    def __enter__(self):
-        self.start()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stop()
-        return False
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """
+        Exit the runtime context and close the Snowflake Snowpark Session.
+        
+        Parameters
+        ----------
+        exc_type : type
+            The exception type.
+        exc_value : Exception
+            The exception value.
+        traceback : TracebackType
+            The traceback.
+        """
+        if self._session is not None:
+            self._session.close()
+            self._session = None
