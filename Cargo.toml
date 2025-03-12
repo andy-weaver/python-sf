@@ -1,0 +1,16 @@
+[package]
+name = "python_sf"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "_pgn_parser"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.24.0", features = ["extension-module", "abi3-py39"] }
+regex = "1.7"
+rayon = "1.7"
+
+[dev-dependencies]
+tempfile = "3.5"

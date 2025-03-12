@@ -4,6 +4,7 @@ import fastavro
 from uuid import uuid4
 from tqdm import tqdm
 from pathlib import Path
+from python_sf._pgn_parser import extract_tags, extract_moves, tag_to_dict
 
 
 def preprocess_pgn(pgn_file: str) -> None:
@@ -32,7 +33,7 @@ def preprocess_pgn(pgn_file: str) -> None:
 
     curr_dir = Path.cwd()
     out_file = Path(pgn_file).stem + ".pgn"
-    
+
     data = _decompress_pgn_file(in_file, curr_dir / out_file)
     decompressed_file = curr_dir / out_file
     with open(decompressed_file, "r") as f:
@@ -42,6 +43,7 @@ def preprocess_pgn(pgn_file: str) -> None:
     structured_games = _convert_pgn_to_dict(games)
     schema = _get_avro_schema(structured_games)
     _write_avro_file(structured_games, schema)
+
 
 def _decompress_pgn_file(pgn_file: str, output_file: str = "decompressed.pgn") -> None:
     """
@@ -95,6 +97,33 @@ def _split_pgn_games(data: str) -> list[str]:
     return games
 
 
+def _extract_tags_from_game(game: str) -> dict:
+    """
+    Extract the header tags from a PGN game string.
+
+    Parameters
+    ----------
+    game : str
+        A PGN game string.
+
+    Returns
+    -------
+    dict
+        A dictionary of header tags and values.
+    """
+    tags = extract_tags(game)
+    tags = [(tag_to_dict(tag)["name"], tag_to_dict(tag)["value"]) for tag in tags]
+    moves = tag_to_dict(extract_moves(game))
+    print(f"tags: {tags}")
+    print(f"moves: {moves}")
+    out = {}
+    for tag in tags:
+        out[tag[0]] = tag[1]
+    out["moves"] = moves["value"]
+    print(f"out: {out}")
+    return out
+
+
 def _convert_pgn_to_dict(games: list[str]) -> list[dict]:
     """
     Convert a list of PGN game strings into a structured dictionary format.
@@ -124,7 +153,9 @@ def _convert_pgn_to_dict(games: list[str]) -> list[dict]:
         if len(parts) == 2:
             moves = parts[1].strip()
         else:
-            moves = "\n".join(line for line in game.splitlines() if not line.startswith("[")).strip()
+            moves = "\n".join(
+                line for line in game.splitlines() if not line.startswith("[")
+            ).strip()
         game_dict["moves"] = moves
         game_dict["game_id"] = str(uuid4())
         structured_games.append(game_dict)

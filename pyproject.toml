@@ -3,29 +3,29 @@ name = "python-sf"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 dependencies = [
     "duckdb>=1.2.1",
     "fastavro>=1.10.0",
     "pandas>=2.2.3",
     "polars>=1.24.0",
     "pyarrow>=18.0.0,<19.0.0",
-    "pydantic>=2.10.6",
     "pyspark>=3.5.5",
     "python-dotenv>=1.0.1",
-    "requests>=2.32.3",
-    "snowflake>=1.0.5",
     "snowflake-snowpark-python>=1.29.0",
+    "snowflake>=1.0.5",
     "tqdm>=4.67.1",
     "zstandard>=0.23.0",
 ]
 
+[tool.maturin]
+module-name = "python_sf._pgn_parser"
+python-packages = ["python_sf"]
+python-source = "src"
+
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
 
 [dependency-groups]
-dev = [
-    "pytest>=8.3.5",
-    "ruff>=0.9.10",
-]
+dev=["pytest>=8.3.5", "ruff>=0.9.10", "maturin>=1.8.2"]

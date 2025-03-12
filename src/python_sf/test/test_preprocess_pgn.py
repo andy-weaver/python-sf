@@ -3,6 +3,7 @@ import zstandard
 import fastavro
 
 from python_sf.chess.preprocess_pgn_file import (
+    _extract_tags_from_game,
     _split_pgn_games,
     _convert_pgn_to_dict,
     _get_avro_schema,
@@ -11,6 +12,28 @@ from python_sf.chess.preprocess_pgn_file import (
     preprocess_pgn,
 )
 
+def test_extract_tags_from_game():
+    """Test that PGN headers and moves are extracted from a game string."""
+    sample_game = (
+        '[Event "Test Event"]\n[Site "Test Site"]\n[Date "2025.03.10"]\n\n'
+        "1. e4 e5 2. d4 d5 1-0"
+    )
+    extracted = _extract_tags_from_game(sample_game)
+    assert isinstance(extracted, list), (
+        f"Expected extracted to be a list, Actual: {type(extracted)}"
+    )
+    assert extracted.get("Event") == "Test Event", (
+        f"Expected 'Event' to be 'Test Event', Actual: {extracted.get('Event')}"
+    )
+    assert extracted.get("Site") == "Test Site", (
+        f"Expected 'Site' to be 'Test Site', Actual: {extracted.get('Site')}"
+    )
+    assert extracted.get("Date") == "2025.03.10", (
+        f"Expected 'Date' to be '2025.03.10', Actual: {extracted.get('Date')}"
+    )
+    assert extracted.get("moves") == "1. e4 e5 1-0", (
+        f"Expected 'moves' to be '1. e4 e5 1-0', Actual: {extracted.get('moves')}"
+    )
 
 def test_split_pgn_games():
     """Test that PGN data is split into individual games based on headers and results."""
